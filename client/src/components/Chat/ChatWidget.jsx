@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useVisualization } from '../../context/VisualizationContext';
 import { MessageCircle, X, Send, Bot, User, Minimize2 } from 'lucide-react';
 
 const ChatWidget = () => {
@@ -29,15 +30,65 @@ const ChatWidget = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    const { highlightOrgans } = useVisualization();
+
+    // ... (rest of state)
+
     const handleSend = async (e) => {
         e.preventDefault();
         if (!inputText.trim()) return;
 
-        const text = inputText;
+        const text = inputText.toLowerCase();
         setInputText('');
 
+        // Symptom/Body Part Detection Logic
+        const symptomMap = {
+            'head': ['head'],
+            'brain': ['brain'],
+            'headache': ['head'],
+            'migraine': ['head'],
+            'dizzy': ['head'],
+            'chest': ['chest'],
+            'heart': ['heart'],
+            'palpitations': ['heart'],
+            'lung': ['l_lung', 'r_lung'],
+            'breath': ['l_lung', 'r_lung'],
+            'cough': ['l_lung', 'r_lung'],
+            'stomach': ['stomach'],
+            'tummy': ['stomach'],
+            'belly': ['stomach'],
+            'abdomen': ['abdomen'],
+            'gut': ['intestines'],
+            'bowel': ['intestines'],
+            'liver': ['liver'],
+            'back': ['spine'],
+            'spine': ['spine'],
+            'arm': ['arm'],
+            'hand': ['arm'],
+            'shoulder': ['arm'],
+            'leg': ['leg'],
+            'foot': ['leg'],
+            'knee': ['leg'],
+            'toes': ['leg'],
+            'skin': ['skin'],
+            'rash': ['skin'],
+            'itch': ['skin'],
+            'burn': ['skin']
+        };
+
+        const foundOrgans = new Set();
+        Object.keys(symptomMap).forEach(key => {
+            if (text.includes(key)) {
+                symptomMap[key].forEach(id => foundOrgans.add(id));
+            }
+        });
+
+        if (foundOrgans.size > 0) {
+            highlightOrgans(Array.from(foundOrgans));
+        }
+
         // Optimistic UI Update
-        const tempMsg = { sender: 'user', text, timestamp: new Date() };
+        const tempMsg = { sender: 'user', text: inputText, timestamp: new Date() };
         setMessages(prev => [...prev, tempMsg]);
         setLoading(true);
 
@@ -48,7 +99,7 @@ const ChatWidget = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ message: text })
+                body: JSON.stringify({ message: inputText })
             });
             const data = await res.json();
 

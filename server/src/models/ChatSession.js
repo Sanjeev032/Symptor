@@ -35,6 +35,10 @@ const ChatSessionSchema = new mongoose.Schema({
         lastQuestionType: {
             type: String, // 'symptom_check', 'general', 'greeting'
             default: 'general'
+        },
+        // The symptom the bot just asked about (if lastQuestionType is 'symptom_check')
+        pendingSymptom: {
+            type: String
         }
     },
     updatedAt: {

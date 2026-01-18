@@ -4,7 +4,9 @@ import { OrbitControls, PerspectiveCamera, Environment, Grid, Html, PerformanceM
 import RealisticBodyModel from './RealisticBodyModel';
 import Controls from './Controls';
 import DiagnosisForm from '../Diagnosis/DiagnosisForm';
+import ErrorBoundary from '../common/ErrorBoundary';
 import { bodySystems as initialSystems } from '../../data/bodySystems';
+import { useVisualization } from '../../context/VisualizationContext';
 
 const Loader = () => (
     <Html center>
@@ -14,8 +16,15 @@ const Loader = () => (
 
 const Scene = () => {
     const [systems, setSystems] = useState(initialSystems);
-    const [selectedOrgan, setSelectedOrgan] = useState(null);
-    const [highlightedOrganIds, setHighlightedOrganIds] = useState([]);
+    const {
+        highlightedOrganIds,
+        setHighlightedOrganIds,
+        selectedOrgan,
+        setSelectedOrgan
+    } = useVisualization();
+
+    // const [selectedOrgan, setSelectedOrgan] = useState(null); // Now in context
+    // const [highlightedOrganIds, setHighlightedOrganIds] = useState([]); // Now in context
     const [dpr, setDpr] = useState(1.5); // Dynamic Pixel Ratio
 
     const toggleSystem = (systemKey) => {
@@ -80,7 +89,8 @@ const Scene = () => {
             {/* PerformanceMonitor added to dynamically adjust DPR based on framerate */}
             <Canvas shadows dpr={dpr}>
                 <PerformanceMonitor onIncline={() => setDpr(2)} onDecline={() => setDpr(1)} />
-                <PerspectiveCamera makeDefault position={[0, 1, 4]} fov={50} />
+                {/* Fixed Camera at torso level, further back for full view */}
+                <PerspectiveCamera makeDefault position={[0, 0, 4.5]} fov={50} />
 
                 <ambientLight intensity={0.5} />
                 <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
@@ -88,25 +98,30 @@ const Scene = () => {
 
                 <Environment preset="city" />
 
-                <group position={[0, -1, 0]}>
-                    <Suspense fallback={<Loader />}>
-                        <RealisticBodyModel
-                            systems={systems}
-                            onSelectOrgan={setSelectedOrgan}
-                            selectedOrganId={selectedOrgan?.id}
-                            highlightedOrganIds={highlightedOrganIds}
-                        />
-                    </Suspense>
-                    <Grid infiniteGrid fadeDistance={30} fadeStrength={5} sectionColor="#4f46e5" cellColor="#6366f1" position={[0, -0.01, 0]} />
+                <group position={[0, 0, 0]}>
+                    {/* Clean group wrapper at origin */}
+                    <ErrorBoundary>
+                        <Suspense fallback={<Loader />}>
+                            <RealisticBodyModel
+                                systems={systems}
+                                onSelectOrgan={setSelectedOrgan}
+                                selectedOrganId={selectedOrgan?.id}
+                                highlightedOrganIds={highlightedOrganIds}
+                            />
+                        </Suspense>
+                    </ErrorBoundary>
+                    <Grid infiniteGrid fadeDistance={30} fadeStrength={5} sectionColor="#4f46e5" cellColor="#6366f1" position={[0, -2, 0]} />
                 </group>
 
                 <OrbitControls
-                    target={[0, 1, 0]}
-                    minPolarAngle={0}
-                    maxPolarAngle={Math.PI / 1.5}
-                    enablePan={false}
-                    minDistance={2}
-                    maxDistance={8}
+                    target={[0, 0, 0]} /* Start focused at center (now torso) */
+                    enablePan={false} /* Locked panning */
+                    minPolarAngle={Math.PI / 4} /* Restrict looking too far up/down */
+                    maxPolarAngle={Math.PI / 1.5} /* Ground constraint */
+                    minDistance={2.5}
+                    maxDistance={7}
+                    enableDamping={true}
+                    dampingFactor={0.05}
                 />
             </Canvas>
         </div>

@@ -39,17 +39,20 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
 
     // MEMOIZED MAP: Map Mesh Names -> Organ IDs
     const organMap = useMemo(() => ({
-        'brain': ['Head', 'Brain', 'Cerebrum'],
+        'brain': ['Brain', 'Cerebrum'],
+        'head': ['Head', 'Skull', 'Cranium', 'Face'],
         'heart': ['Heart', 'Atrium', 'Ventricle'],
         'l_lung': ['Lung_L'],
         'r_lung': ['Lung_R'],
+        'chest': ['Rib', 'Costal', 'Sternum', 'Thorax'],
         'stomach': ['Stomach'],
         'liver': ['Liver'],
-        'intestines': ['Intestine', 'Colon'],
+        'abdomen': ['Intestine', 'Colon', 'Abdomen'], // Fallback for general abdominal pain
+        'intestines': ['Intestine', 'Colon'], // Specific
         'skin': ['Body', 'Skin'],
         'spine': ['Spine', 'Vertebra'],
-        'ribs': ['Rib', 'Costal'],
-        'skull': ['Skull', 'Cranium']
+        'arm': ['Arm', 'Humerus', 'Radius', 'Ulna', 'Hand', 'Finger'],
+        'leg': ['Leg', 'Femur', 'Tibia', 'Fibula', 'Foot', 'Toe']
     }), []);
 
     // CACHED TRAVERSAL: Build a lookup map of meshes once
@@ -117,12 +120,38 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         });
     }, [meshLookup, systems, selectedOrganId, highlightedOrganIds, materials]);
 
-    // FRAME LOOP: Low cost rotation
-    useFrame((state) => {
-        if (modelRef.current) {
-            modelRef.current.rotation.y += 0.002;
-        }
-    });
+    // AUTO-CENTERING & SCALING
+    useEffect(() => {
+        if (!scene) return;
+
+        // 1. Compute Bounding Box
+        const box = new THREE.Box3().setFromObject(scene);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+
+        // 2. Normalize Scale (Target Height = 4 units)
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const targetHeight = 4;
+        const scaleFactor = targetHeight / maxDim;
+
+        scene.scale.setScalar(scaleFactor);
+
+        // 3. Center the Model
+        // We need to shift the model so its center aligns with (0,0,0)
+        // Since we scaled it, the offset needs to be scaled too if we move position, 
+        // OR we just move the position to negative center * scale.
+        scene.position.x = -center.x * scaleFactor;
+        scene.position.y = -center.y * scaleFactor; // Center vertically too
+        scene.position.z = -center.z * scaleFactor;
+
+        // Optional: Lift it up slightly if we want feet on ground?
+        // For "centering", (0,0,0) is usually the middle of volume. 
+        // If we want feet on y=0 (ground), we shift y up by half height.
+        // scene.position.y += (size.y * scaleFactor) / 2;
+
+    }, [scene]);
 
     const handleClick = (e) => {
         e.stopPropagation();
@@ -144,8 +173,7 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         <primitive
             ref={modelRef}
             object={scene}
-            position={[0, -1, 0]}
-            scale={[2, 2, 2]}
+            // Position/Scale controlled by useEffect now
             onClick={handleClick}
         />
     );

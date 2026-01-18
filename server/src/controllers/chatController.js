@@ -24,81 +24,140 @@ const sendMessage = async (req, res) => {
         // 3. Analyze Input & Generate Response
         let botResponse = "";
         const tokens = tokenize(message);
+        const lowerMessage = message.trim().toLowerCase();
 
-        // Load all diseases for comparison (Optimization: Cache this in memory in a real app)
+        // Load all diseases (Optimization: Cache this)
         const allDiseases = await Disease.find();
 
-        // Check for Greeting
-        if (tokens.includes('hello') || tokens.includes('hi')) {
-            botResponse = "Hello! I'm here to help with your medical questions. Describe your symptoms, and I can give you some information.";
+        // CHECK IF ANSWER IS "YES" OR "NO" to a previous question
+        if (session.context.lastQuestionType === 'symptom_check' && session.context.pendingSymptom) {
+            const pending = session.context.pendingSymptom;
+
+            if (['yes', 'yeah', 'yep', 'sure', 'i do'].includes(lowerMessage)) {
+                // User confirmed the symptom
+                if (!session.context.confirmedSymptoms.includes(pending)) {
+                    session.context.confirmedSymptoms.push(pending);
+                }
+            } else if (['no', 'nope', 'nah', 'not really'].includes(lowerMessage)) {
+                // User denied the symptom - logic could be to exclude it or just not add it
+                // For now, we just don't add it.
+            } else {
+                // Ambiguous response, treat as new input but keep context if it looks like a symptom description
+                // For this simple version, we'll strip 'yes/no' logic if it doesn't match and proceed to extraction
+            }
+
+            // Clear pending context after processing
+            session.context.lastQuestionType = 'general';
+            session.context.pendingSymptom = null;
         }
-        // Logic: Symptom Matching
-        else {
-            // Find matched symptoms in the message
-            const foundSymptoms = [];
-            allDiseases.forEach(d => {
-                d.symptoms.forEach(s => {
-                    const symptomTokens = tokenize(s);
-                    // Simple check: if all parts of the symptom phrase are in the message
-                    if (symptomTokens.every(t => tokens.includes(t))) {
-                        foundSymptoms.push(s);
-                    }
-                });
+
+        // Logic: Standard Symptom Extraction
+        // Find matched symptoms in the message
+        const foundSymptoms = [];
+        allDiseases.forEach(d => {
+            d.symptoms.forEach(s => {
+                const symptomTokens = tokenize(s);
+                // Check if symptom phrase appears in tokens
+                // Simple partial matching: if all words of the symptom are present
+                if (symptomTokens.every(t => tokens.includes(t))) {
+                    foundSymptoms.push(s);
+                }
             });
+        });
 
-            // Update Context
-            const newSymptoms = [...new Set([...session.context.confirmedSymptoms, ...foundSymptoms])];
-            session.context.confirmedSymptoms = newSymptoms;
+        // Update Context with new found symptoms
+        const newSymptoms = [...new Set([...session.context.confirmedSymptoms, ...foundSymptoms])];
+        session.context.confirmedSymptoms = newSymptoms;
 
-            // Find matching diseases based on confirmed symptoms
+        // Check for Greeting if no symptoms found and no context
+        if (newSymptoms.length === 0 && (tokens.includes('hello') || tokens.includes('hi'))) {
+            botResponse = "Hello! I'm here to help with your medical questions. Describe your symptoms, and I can give you some information.";
+            session.context.lastQuestionType = 'greeting';
+        }
+        else if (newSymptoms.length > 0) {
+            // We have symptoms. Match diseases.
+            // Find diseases that share ANY of the confirmed symptoms
             let matchedDiseases = allDiseases.filter(d =>
                 newSymptoms.some(s => d.symptoms.includes(s))
             );
 
-            // Refine: if we have confirmed symptoms, try to find diseases that have ALL or MOST of them
-            // For now, simpler logic: finding diseases that contain at least one confirmed symptom
+            // Sort diseases by how many symptoms overlap
+            matchedDiseases.sort((a, b) => {
+                const aCount = a.symptoms.filter(s => newSymptoms.includes(s)).length;
+                const bCount = b.symptoms.filter(s => newSymptoms.includes(s)).length;
+                return bCount - aCount;
+            });
 
-            if (foundSymptoms.length > 0 || newSymptoms.length > 0) {
-                // We have some context
+            // Filter out diseases that have 0 matches (redundant but safe)
+            const topMatches = matchedDiseases.filter(d => {
+                const matchCount = d.symptoms.filter(s => newSymptoms.includes(s)).length;
+                return matchCount > 0;
+            });
 
-                // Sort diseases by match count
-                matchedDiseases.sort((a, b) => {
-                    const aCount = a.symptoms.filter(s => newSymptoms.includes(s)).length;
-                    const bCount = b.symptoms.filter(s => newSymptoms.includes(s)).length;
-                    return bCount - aCount;
-                });
+            if (topMatches.length === 0) {
+                botResponse = "I understood those symptoms, but I couldn't find a matching record in my database. Please consult a doctor.";
+            } else {
+                // Logic:
+                // 1. If we have a very strong match (e.g. all symptoms of the disease are present), diagnose.
+                // 2. Else, ask a follow-up question from the top match.
 
-                const topMatches = matchedDiseases.filter(d => {
-                    const matchCount = d.symptoms.filter(s => newSymptoms.includes(s)).length;
-                    return matchCount > 0;
-                });
+                const topDisease = topMatches[0];
+                const matchCount = topDisease.symptoms.filter(s => newSymptoms.includes(s)).length;
+                const totalSymptoms = topDisease.symptoms.length;
 
-                if (topMatches.length === 0) {
-                    botResponse = "I understood those symptoms, but I couldn't find a matching record in my database. Please consult a doctor.";
-                } else if (topMatches.length === 1 && topMatches[0].symptoms.every(s => newSymptoms.includes(s))) {
-                    // Exact match found (all symptoms matched)
-                    const d = topMatches[0];
-                    botResponse = `Based on your symptoms, this looks like **${d.name}**.\n${d.description}\n\n**Common Treatment:** ${d.treatment.join(', ')}.`;
-                } else {
-                    // Multiple possibilities or partial match -> Ask follow-up
-                    // Find a symptom from the top match that hasn't been confirmed yet
-                    const topDisease = topMatches[0];
-                    const nextSymptom = topDisease.symptoms.find(s => !newSymptoms.includes(s));
+                // Threshold: If we matched > 70% of symptoms or if it has few symptoms and we matched most
+                const isStrongMatch = (matchCount / totalSymptoms) >= 0.7 || (matchCount >= 2 && totalSymptoms <= 3);
 
-                    if (nextSymptom) {
+                if (isStrongMatch || foundSymptoms.length === 0 /* processing yes/no with no new symptoms */) {
+                    // Check for remaining symptoms to ask about, just in case, but if strong enough, just show info
+                    // Actually, let's ask one more check if we are not 100% sure? 
+                    // For simplicity: If >75% match, show result. Else ask missing.
+
+                    const missingSymptoms = topDisease.symptoms.filter(s => !newSymptoms.includes(s));
+
+                    if (missingSymptoms.length > 0 && (matchCount / totalSymptoms) < 0.8) {
+                        // Ask follow up
+                        const nextSymptom = missingSymptoms[0];
                         botResponse = `Do you also experience **${nextSymptom}**?`;
+                        session.context.lastQuestionType = 'symptom_check';
+                        session.context.pendingSymptom = nextSymptom;
                     } else {
-                        // All symptoms of the top disease are confirmed
-                        botResponse = `This strongly suggests **${topDisease.name}**.\n${topDisease.description}\n\n**Treatment:** ${topDisease.treatment.join(', ')}.`;
+                        // Diagnosis
+                        let safetyWarning = "";
+                        if (['High', 'Critical'].includes(topDisease.severity)) {
+                            safetyWarning = "\n\n**⚠️ URGENT WARNING:** This condition can be serious. Please seek immediate medical attention.";
+                        }
+
+                        botResponse = `Based on your symptoms, this looks like **${topDisease.name}**.\n${topDisease.description}\n\n**Common Treatment:** ${topDisease.treatment.join(', ')}.${safetyWarning}`;
+
+                        // Reset context after diagnosis? User might want to ask more. 
+                        // Check persistence requirement: "adapts based on user history". 
+                        // We keep the history but maybe clear the 'current session' active state if we wanted to start fresh.
+                        // For now, we keep accumulating symptoms until user says 'clear' or similar? 
+                        // Or maybe we don't clear, ensuring the chatbot "remembers".
+                    }
+                } else {
+                    // Weak match, ask follow up
+                    const missingSymptoms = topDisease.symptoms.filter(s => !newSymptoms.includes(s));
+                    if (missingSymptoms.length > 0) {
+                        const nextSymptom = missingSymptoms[0];
+                        botResponse = `Do you also experience **${nextSymptom}**?`;
+                        session.context.lastQuestionType = 'symptom_check';
+                        session.context.pendingSymptom = nextSymptom;
+                    } else {
+                        // All matched? Then it's the diagnosis (covered by strong match block usually)
+                        botResponse = `This matches **${topDisease.name}**.\n${topDisease.description}`;
                     }
                 }
-            } else {
-                botResponse = "I didn't recognize any specific symptoms in your message. Can you describe what you're feeling? (e.g., 'headache', 'fever', 'stomach pain')";
             }
         }
+        else {
+            botResponse = "I didn't recognize any specific symptoms in your message. Can you describe what you're feeling? (e.g., 'headache', 'fever', 'stomach pain')";
+            session.context.lastQuestionType = 'general';
+        }
 
-        // Add Disclaimer if medical info is given
-        if (!botResponse.includes("Hello!") && !botResponse.includes("I didn't recognize")) {
+        // Add Disclaimer if medical info is given and not already added
+        if (!botResponse.includes("Hello!") && !botResponse.includes("I didn't recognize") && !botResponse.includes("Do you also experience")) {
             botResponse += DISCLAIMER;
         }
 
