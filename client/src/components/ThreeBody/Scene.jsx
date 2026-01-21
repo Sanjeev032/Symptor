@@ -117,16 +117,14 @@ const Scene = () => {
                 <group position={[0, 0, 0]}>
                     <ErrorBoundary>
                         <Suspense fallback={<Loader />}>
-                            {/* Auto-center the model */}
-                            <Center>
-                                <RealisticBodyModel
-                                    systems={systems}
-                                    onSelectOrgan={setSelectedOrgan}
-                                    selectedOrganId={selectedOrgan?.id}
-                                    highlightedOrganIds={highlightedOrganIds}
-                                    onFocusOrgan={handleFocusOrgan}
-                                />
-                            </Center>
+                            {/* Auto-center handled in RealisticBodyModel */}
+                            <RealisticBodyModel
+                                systems={systems}
+                                onSelectOrgan={setSelectedOrgan}
+                                selectedOrganId={selectedOrgan?.id}
+                                highlightedOrganIds={highlightedOrganIds}
+                                onFocusOrgan={handleFocusOrgan}
+                            />
                         </Suspense>
                     </ErrorBoundary>
                     <Grid infiniteGrid fadeDistance={30} fadeStrength={5} sectionColor="#4f46e5" cellColor="#6366f1" position={[0, -2, 0]} />

@@ -117,22 +117,31 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         });
     }, [meshLookup, systems, selectedOrganId, highlightedOrganIds, materials]);
 
-    // AUTO-SCALING
+    // AUTO-SCALING & CENTERING
     useEffect(() => {
         if (!scene) return;
 
-        // 1. Compute Bounding Box
+        // 1. Reset transformations to ensure clean measurements
+        scene.position.set(0, 0, 0);
+        scene.scale.set(1, 1, 1);
+        scene.updateMatrixWorld(true);
+
+        // 2. Compute Bounding Box
         const box = new THREE.Box3().setFromObject(scene);
         const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
         box.getSize(size);
+        box.getCenter(center);
 
-        // 2. Normalize Scale (Target Height = 5 units)
-        // If the max dimension is huge (e.g. 1800), this brings it down to 5.
+        // 3. Center the model (Offset by negative center)
+        // We move the scene so its center aligns with world (0,0,0)
+        scene.position.sub(center);
+
+        // 4. Normalize Scale (Target Height = 4 units to fit nicely)
         const maxDim = Math.max(size.x, size.y, size.z);
-        const targetHeight = 5;
+        const targetHeight = 4; // Slightly smaller to ensure fit
 
-        // Prevent re-scaling if already scaled (check slightly)
-        if (maxDim > targetHeight || maxDim < 1) {
+        if (maxDim > 0) {
             const scaleFactor = targetHeight / maxDim;
             scene.scale.setScalar(scaleFactor);
         }
