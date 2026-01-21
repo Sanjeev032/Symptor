@@ -128,6 +128,11 @@ const Scene = () => {
                         </Suspense>
                     </ErrorBoundary>
                     <Grid infiniteGrid fadeDistance={30} fadeStrength={5} sectionColor="#4f46e5" cellColor="#6366f1" position={[0, -2, 0]} />
+                    {/* DEBUG: Red Box to verify Scene Rendering */}
+                    <mesh position={[2, 0, 0]}>
+                        <boxGeometry />
+                        <meshStandardMaterial color="red" />
+                    </mesh>
                 </group>
 
                 <OrbitControls

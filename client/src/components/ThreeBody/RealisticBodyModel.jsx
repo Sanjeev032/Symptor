@@ -13,7 +13,7 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         default: new THREE.MeshStandardMaterial({
             color: '#cbd5e1',
             transparent: true,
-            opacity: 0.3,
+            opacity: 0.8,
             roughness: 0.5,
             metalness: 0.2
         }),
