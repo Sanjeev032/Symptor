@@ -46,7 +46,7 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         'liver': ['Liver'],
         'abdomen': ['Intestine', 'Colon', 'Abdomen'], // Fallback for general abdominal pain
         'intestines': ['Intestine', 'Colon'], // Specific
-        'skin': ['Body', 'Skin'],
+        'skin': ['Body', 'Skin', 'Object_2'], // Added Object_2 fallback
         'spine': ['Spine', 'Vertebra'],
         'arm': ['Arm', 'Humerus', 'Radius', 'Ulna', 'Hand', 'Finger'],
         'leg': ['Leg', 'Femur', 'Tibia', 'Fibula', 'Foot', 'Toe']
@@ -58,6 +58,12 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         scene.traverse((child) => {
             if (child.isMesh) {
                 console.log("Found Mesh:", child.name);
+
+                // DEBUG: Check size of the mesh
+                child.geometry.computeBoundingBox();
+                const box = child.geometry.boundingBox;
+                console.log(`Msg ${child.name} Box:`, box);
+
                 // Find which organ this mesh belongs to
                 let ownerId = null;
                 for (const [id, names] of Object.entries(organMap)) {
@@ -119,35 +125,12 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
     }, [meshLookup, systems, selectedOrganId, highlightedOrganIds, materials]);
 
     // AUTO-SCALING & CENTERING
+    // AUTO-SCALING REMOVED - Using static transform
+    /*
     useEffect(() => {
-        if (!scene) return;
-
-        // 1. Reset transformations to ensure clean measurements
-        scene.position.set(0, 0, 0);
-        scene.scale.set(1, 1, 1);
-        scene.updateMatrixWorld(true);
-
-        // 2. Compute Bounding Box
-        const box = new THREE.Box3().setFromObject(scene);
-        const size = new THREE.Vector3();
-        const center = new THREE.Vector3();
-        box.getSize(size);
-        box.getCenter(center);
-
-        // 3. Center the model (Offset by negative center)
-        // We move the scene so its center aligns with world (0,0,0)
-        scene.position.sub(center);
-
-        // 4. Normalize Scale (Target Height = 4 units to fit nicely)
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const targetHeight = 4; // Slightly smaller to ensure fit
-
-        if (maxDim > 0) {
-            const scaleFactor = targetHeight / maxDim;
-            scene.scale.setScalar(scaleFactor);
-        }
-
+        // ... (removed unstable logic)
     }, [scene]);
+    */
 
     // FOCUS ON ORGAN
     useEffect(() => {
