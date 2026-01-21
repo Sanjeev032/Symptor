@@ -201,7 +201,8 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         <primitive
             ref={modelRef}
             object={scene}
-            // Scale controlled by useEffect
+            scale={2}
+            position={[0, -2, 0]}
             onClick={handleClick}
         />
     );
