@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { format } from 'date-fns';
-import { Clock, AlertTriangle, CheckCircle, Smartphone } from 'lucide-react';
+import { Clock } from 'lucide-react';
 
 const UserDashboard = () => {
     const { token } = useAuth();

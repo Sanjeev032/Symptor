@@ -1,6 +1,6 @@
 import React, { useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment, Grid, Html, PerformanceMonitor } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Environment, Grid, Html, PerformanceMonitor, Center } from '@react-three/drei';
 import RealisticBodyModel from './RealisticBodyModel';
 import Controls from './Controls';
 import DiagnosisForm from '../Diagnosis/DiagnosisForm';
@@ -10,7 +10,9 @@ import { useVisualization } from '../../context/VisualizationContext';
 
 const Loader = () => (
     <Html center>
-        <div style={{ color: 'white', background: '#0f172a', padding: '10px', borderRadius: '8px' }}>Loading Model...</div>
+        <div style={{ color: 'white', background: 'rgba(0,0,0,0.8)', padding: '12px 24px', borderRadius: '8px', border: '1px solid #334155' }}>
+            Loading 3D Model...
+        </div>
     </Html>
 );
 
@@ -75,6 +77,20 @@ const Scene = () => {
         setSystems(newSystems);
     };
 
+    const controlsRef = React.useRef();
+
+    const handleFocusOrgan = (position) => {
+        console.log("Scene: handleFocusOrgan called with:", position);
+        if (controlsRef.current) {
+            console.log("Scene: Updating controls target");
+            // Smoothly animate target or just snap
+            controlsRef.current.target.copy(position);
+            controlsRef.current.update();
+        } else {
+            console.error("Scene: controlsRef is null!");
+        }
+    };
+
     return (
         <div style={{ position: 'relative', width: '100%', height: '100vh', background: '#0f172a' }}>
 
@@ -89,8 +105,8 @@ const Scene = () => {
             {/* PerformanceMonitor added to dynamically adjust DPR based on framerate */}
             <Canvas shadows dpr={dpr}>
                 <PerformanceMonitor onIncline={() => setDpr(2)} onDecline={() => setDpr(1)} />
-                {/* Fixed Camera at torso level, further back for full view */}
-                <PerspectiveCamera makeDefault position={[0, 0, 4.5]} fov={50} />
+                {/* Standard Camera Position */}
+                <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />
 
                 <ambientLight intensity={0.5} />
                 <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
@@ -99,27 +115,31 @@ const Scene = () => {
                 <Environment preset="city" />
 
                 <group position={[0, 0, 0]}>
-                    {/* Clean group wrapper at origin */}
                     <ErrorBoundary>
                         <Suspense fallback={<Loader />}>
-                            <RealisticBodyModel
-                                systems={systems}
-                                onSelectOrgan={setSelectedOrgan}
-                                selectedOrganId={selectedOrgan?.id}
-                                highlightedOrganIds={highlightedOrganIds}
-                            />
+                            {/* Auto-center the model */}
+                            <Center>
+                                <RealisticBodyModel
+                                    systems={systems}
+                                    onSelectOrgan={setSelectedOrgan}
+                                    selectedOrganId={selectedOrgan?.id}
+                                    highlightedOrganIds={highlightedOrganIds}
+                                    onFocusOrgan={handleFocusOrgan}
+                                />
+                            </Center>
                         </Suspense>
                     </ErrorBoundary>
                     <Grid infiniteGrid fadeDistance={30} fadeStrength={5} sectionColor="#4f46e5" cellColor="#6366f1" position={[0, -2, 0]} />
                 </group>
 
                 <OrbitControls
-                    target={[0, 0, 0]} /* Start focused at center (now torso) */
+                    ref={controlsRef}
+                    target={[0, 0, 0]} /* Focus on center */
                     enablePan={false} /* Locked panning */
-                    minPolarAngle={Math.PI / 4} /* Restrict looking too far up/down */
+                    minPolarAngle={Math.PI / 6} /* Allow looking from higher up */
                     maxPolarAngle={Math.PI / 1.5} /* Ground constraint */
                     minDistance={2.5}
-                    maxDistance={7}
+                    maxDistance={8}
                     enableDamping={true}
                     dampingFactor={0.05}
                 />
@@ -127,5 +147,6 @@ const Scene = () => {
         </div>
     );
 };
+
 
 export default Scene;

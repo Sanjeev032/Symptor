@@ -1,101 +1,65 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Disease = require('../models/Disease');
-const connectDB = require('../config/db');
 
-dotenv.config();
+// Load env vars
+dotenv.config({ path: '../../.env' }); // Adjusted path to root server .env
 
 const diseases = [
-    // Digestive
     {
-        name: "Gastritis",
-        symptoms: ["stomach pain", "nausea", "bloating", "vomiting"],
+        name: "Migraine",
+        symptoms: ["headache", "nausea", "sensitivity to light", "dizzy"],
+        description: "A neurological condition characterized by intense, debilitating headaches.",
+        treatment: ["Pain relievers", "Rest in a dark room", "Hydration"],
         severity: "Medium",
-        affectedSystems: ["digestive"],
-        affectedOrgans: ["stomach"],
-        description: "Inflammation of the lining of the stomach.",
-        treatment: ["Antacids", "Avoid spicy food", "Antibiotics (if H. pylori)"]
+        affectedSystems: ["Nervous"],
+        affectedOrgans: ["Brain"]
     },
     {
         name: "Gastroenteritis",
-        symptoms: ["diarrhea", "vomiting", "fever", "stomach cramps"],
-        severity: "Medium",
-        affectedSystems: ["digestive"],
-        affectedOrgans: ["stomach", "intestines", "colon"],
+        symptoms: ["stomach pain", "nausea", "vomiting", "diarrhea", "belly pain"],
         description: "Inflammation of the stomach and intestines, typically resulting from bacterial toxins or viral infection.",
-        treatment: ["Hydration", "Rest", "Bland diet"]
-    },
-    // Respiratory
-    {
-        name: "Pneumonia",
-        symptoms: ["cough", "fever", "shortness of breath", "chest pain"],
-        severity: "High",
-        affectedSystems: ["respiratory"],
-        affectedOrgans: ["l_lung", "r_lung"],
-        description: "Infection that inflames air sacs in one or both lungs, which may fill with fluid.",
-        treatment: ["Antibiotics", "Cough medicine", "Fever reducers"]
-    },
-    {
-        name: "Bronchitis",
-        symptoms: ["cough", "mucus", "fatigue", "shortness of breath"],
-        severity: "Low",
-        affectedSystems: ["respiratory"],
-        affectedOrgans: ["l_lung", "r_lung", "trachea"],
-        description: "Inflammation of the lining of bronchial tubes, which carry air to and from the lungs.",
-        treatment: ["Rest", "Fluids", "Humidifier"]
-    },
-    // Circulatory
-    {
-        name: "Myocardial Infarction",
-        symptoms: ["chest pain", "shortness of breath", "pain in arm", "nausea"],
-        severity: "Critical",
-        affectedSystems: ["circulatory"],
-        affectedOrgans: ["heart"],
-        description: "A blockage of blood flow to the heart muscle (Heart Attack).",
-        treatment: ["Emergency surgery", "Clot-busting drugs", "Aspirin"]
-    },
-    // Nervous
-    {
-        name: "Migraine",
-        symptoms: ["headache", "nausea", "sensitivity to light", "visual disturbances"],
+        treatment: ["Hydration", "Rest", "Bland diet"],
         severity: "Medium",
-        affectedSystems: ["nervous"],
-        affectedOrgans: ["brain"],
-        description: "A headache of varying intensity, often accompanied by nausea and sensitivity to light and sound.",
-        treatment: ["Pain relievers", "Dark room", "Caffeine"]
+        affectedSystems: ["Digestive"],
+        affectedOrgans: ["Stomach", "Intestines"]
     },
     {
-        name: "Meningitis",
-        symptoms: ["headache", "stiff neck", "fever", "sensitivity to light"],
-        severity: "Critical",
-        affectedSystems: ["nervous"],
-        affectedOrgans: ["brain", "spinal_cord"],
-        description: "Inflammation of brain and spinal cord membranes, typically caused by an infection.",
-        treatment: ["Immediate antibiotics", "Corticosteroids", "Hospitalization"]
-    },
-    // Integumentary
-    {
-        name: "Dermatitis",
-        symptoms: ["rash", "itchy skin", "redness", "dry skin"],
+        name: "Common Cold",
+        symptoms: ["runny nose", "sore throat", "cough", "congestion", "sneezing"],
+        description: "A common viral infection of the nose and throat.",
+        treatment: ["Rest", "Fluids", "Over-the-counter medicines"],
         severity: "Low",
-        affectedSystems: ["integumentary"],
-        affectedOrgans: ["skin"],
-        description: "Inflammation of the skin causing redness, swelling, and itchiness.",
-        treatment: ["Moisturizers", "Corticosteroid creams", "Antihistamines"]
+        affectedSystems: ["Respiratory"],
+        affectedOrgans: ["Lungs"] // Simplified
+    },
+    {
+        name: "Heart Attack",
+        symptoms: ["chest pain", "shortness of breath", "arm pain", "sweating", "nausea"],
+        description: "A blockage of blood flow to the heart muscle.",
+        treatment: ["Emergency medical help", "Aspirin", "CPR if unconscious"],
+        severity: "Critical",
+        affectedSystems: ["Cardiovascular"],
+        affectedOrgans: ["Heart"]
     }
 ];
 
-const seedDiseases = async () => {
+const seedDB = async () => {
     try {
-        await connectDB();
-        await Disease.deleteMany(); // Clear existing
+        await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/medical_auth_app');
+        console.log('MongoDB Connected for Seeding');
+
+        await Disease.deleteMany({}); // Clear existing
+        console.log('Cleared existing diseases');
+
         await Disease.insertMany(diseases);
-        console.log('Diseases seeded successfully');
+        console.log('Diseases Seeded Successfully');
+
         process.exit();
     } catch (err) {
-        console.error('Error seeding diseases:', err);
+        console.error(err);
         process.exit(1);
     }
 };
 
-seedDiseases();
+seedDB();

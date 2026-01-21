@@ -20,7 +20,7 @@ const register = async (req, res) => {
         res.json({ token, user: { id: user.id, name, email, role } });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ message: 'Server Error: ' + err.message });
     }
 };
 
@@ -39,7 +39,7 @@ const login = async (req, res) => {
         res.json({ token, user: { id: user.id, name, email, role: user.role } });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ message: 'Server Error: ' + err.message });
     }
 };
 

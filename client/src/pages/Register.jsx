@@ -25,6 +25,7 @@ const Register = () => {
                 setError(data.message || 'Registration failed');
             }
         } catch (err) {
+            console.error(err);
             setError('Server error');
         }
     };

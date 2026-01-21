@@ -3,9 +3,9 @@ import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlightedOrganIds = [] }) => {
-    // Enable Draco compression support automatically by providing the path
-    const { scene } = useGLTF('/models/human_anatomy.glb', true);
+const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlightedOrganIds = [], onFocusOrgan }) => {
+    // Disable Draco for now to rule out CDN issues
+    const { scene } = useGLTF('/models/human_anatomy.glb');
     const modelRef = useRef();
 
     // MATERIALS: Create shared materials once to reduce memory usage and draw calls
@@ -15,24 +15,21 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
             transparent: true,
             opacity: 0.3,
             roughness: 0.5,
-            metalness: 0.2,
-            skinning: true
+            metalness: 0.2
         }),
         selected: new THREE.MeshStandardMaterial({
             color: '#00ffff',
             transparent: true,
             opacity: 0.9,
             emissive: '#00aaaa',
-            emissiveIntensity: 0.5,
-            skinning: true
+            emissiveIntensity: 0.5
         }),
         highlighted: new THREE.MeshStandardMaterial({
             color: '#ef4444',
             transparent: true,
             opacity: 0.9,
             emissive: '#ff0000',
-            emissiveIntensity: 0.5,
-            skinning: true
+            emissiveIntensity: 0.5
         }),
         invisible: new THREE.MeshStandardMaterial({ visible: false }) // Helper if needed
     }), []);
@@ -89,7 +86,7 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
                 // 1. Determine System Visibility
                 // Find which system this organ belongs to
                 let parentSystem = null;
-                for (const [sysName, sysData] of Object.entries(systems)) {
+                for (const sysData of Object.values(systems)) {
                     if (sysData.organs.some(o => o.id === organId)) {
                         parentSystem = sysData;
                         break;
@@ -120,7 +117,7 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         });
     }, [meshLookup, systems, selectedOrganId, highlightedOrganIds, materials]);
 
-    // AUTO-CENTERING & SCALING
+    // AUTO-SCALING
     useEffect(() => {
         if (!scene) return;
 
@@ -128,30 +125,52 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         const box = new THREE.Box3().setFromObject(scene);
         const size = new THREE.Vector3();
         box.getSize(size);
-        const center = new THREE.Vector3();
-        box.getCenter(center);
 
-        // 2. Normalize Scale (Target Height = 4 units)
+        // 2. Normalize Scale (Target Height = 5 units)
+        // If the max dimension is huge (e.g. 1800), this brings it down to 5.
         const maxDim = Math.max(size.x, size.y, size.z);
-        const targetHeight = 4;
-        const scaleFactor = targetHeight / maxDim;
+        const targetHeight = 5;
 
-        scene.scale.setScalar(scaleFactor);
-
-        // 3. Center the Model
-        // We need to shift the model so its center aligns with (0,0,0)
-        // Since we scaled it, the offset needs to be scaled too if we move position, 
-        // OR we just move the position to negative center * scale.
-        scene.position.x = -center.x * scaleFactor;
-        scene.position.y = -center.y * scaleFactor; // Center vertically too
-        scene.position.z = -center.z * scaleFactor;
-
-        // Optional: Lift it up slightly if we want feet on ground?
-        // For "centering", (0,0,0) is usually the middle of volume. 
-        // If we want feet on y=0 (ground), we shift y up by half height.
-        // scene.position.y += (size.y * scaleFactor) / 2;
+        // Prevent re-scaling if already scaled (check slightly)
+        if (maxDim > targetHeight || maxDim < 1) {
+            const scaleFactor = targetHeight / maxDim;
+            scene.scale.setScalar(scaleFactor);
+        }
 
     }, [scene]);
+
+    // FOCUS ON ORGAN
+    useEffect(() => {
+        // DEBUG LOG TO TRACE
+        console.log("RealisticBodyModel: Focus Logic Triggered", { selectedOrganId, hasScene: !!scene, hasCallback: !!onFocusOrgan });
+
+        if (!selectedOrganId || !scene || !onFocusOrgan) return;
+
+        const selectedMeshes = [];
+        scene.traverse((child) => {
+            // console.log("Checking child:", child.name, "ID:", child.userData.organId); // TOO NOISY
+            if (child.isMesh && child.userData.organId === selectedOrganId) {
+                selectedMeshes.push(child);
+            }
+        });
+
+        console.log("RealisticBodyModel: Found meshes for focus:", selectedMeshes.length);
+
+        if (selectedMeshes.length > 0) {
+            const box = new THREE.Box3();
+            selectedMeshes.forEach(mesh => {
+                mesh.updateMatrixWorld(true); // Force update
+                box.expandByObject(mesh);
+            });
+
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+
+            console.log("RealisticBodyModel: Calculator Center:", center);
+            onFocusOrgan(center);
+        }
+    }, [selectedOrganId, scene, onFocusOrgan]);
+
 
     const handleClick = (e) => {
         e.stopPropagation();
@@ -173,7 +192,7 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         <primitive
             ref={modelRef}
             object={scene}
-            // Position/Scale controlled by useEffect now
+            // Scale controlled by useEffect
             onClick={handleClick}
         />
     );

@@ -10,12 +10,17 @@ const DISCLAIMER = "\n\n(Note: I am an AI assistant, not a doctor. This is for i
 const sendMessage = async (req, res) => {
     try {
         const { message } = req.body;
-        const userId = req.user.id;
+        // Fix: authMiddleware sets req.user = decoded token payload ({ userId, role })
+        const userId = req.user.userId;
+        console.log("ChatController: Processing message for user:", userId);
 
         // 1. Get or Create Session
         let session = await ChatSession.findOne({ userId });
         if (!session) {
-            session = new ChatSession({ userId, messages: [], context: { potentialDiseases: [], confirmedSymptoms: [] } });
+            console.log("ChatController: Creating NEW session for user", userId);
+            session = new ChatSession({ userId, messages: [], context: { potentialDiseases: [], confirmedSymptoms: [], rejectedSymptoms: [] } });
+        } else {
+            console.log("ChatController: Found EXISTING session for user", userId, "Messages:", session.messages.length);
         }
 
         // 2. Add User Message
@@ -26,8 +31,17 @@ const sendMessage = async (req, res) => {
         const tokens = tokenize(message);
         const lowerMessage = message.trim().toLowerCase();
 
-        // Load all diseases (Optimization: Cache this)
-        const allDiseases = await Disease.find();
+        // Load all diseases (Optimization: Cached)
+        let allDiseases;
+        if (global.diseaseCache && (Date.now() - global.diseaseCacheTime < 3600000)) {
+            allDiseases = global.diseaseCache;
+            console.log("ChatController: Using cached diseases.");
+        } else {
+            allDiseases = await Disease.find();
+            global.diseaseCache = allDiseases;
+            global.diseaseCacheTime = Date.now();
+            console.log("ChatController: Fetched and cached diseases from DB.");
+        }
 
         // CHECK IF ANSWER IS "YES" OR "NO" to a previous question
         if (session.context.lastQuestionType === 'symptom_check' && session.context.pendingSymptom) {
@@ -39,8 +53,11 @@ const sendMessage = async (req, res) => {
                     session.context.confirmedSymptoms.push(pending);
                 }
             } else if (['no', 'nope', 'nah', 'not really'].includes(lowerMessage)) {
-                // User denied the symptom - logic could be to exclude it or just not add it
-                // For now, we just don't add it.
+                // User denied the symptom
+                if (!session.context.rejectedSymptoms) session.context.rejectedSymptoms = [];
+                if (!session.context.rejectedSymptoms.includes(pending)) {
+                    session.context.rejectedSymptoms.push(pending);
+                }
             } else {
                 // Ambiguous response, treat as new input but keep context if it looks like a symptom description
                 // For this simple version, we'll strip 'yes/no' logic if it doesn't match and proceed to extraction
@@ -94,6 +111,11 @@ const sendMessage = async (req, res) => {
                 return matchCount > 0;
             });
 
+            // Helper to get next unasked symptom
+            const getNextSymptom = (disease, confirmed, rejected) => {
+                return disease.symptoms.find(s => !confirmed.includes(s) && (!rejected || !rejected.includes(s)));
+            };
+
             if (topMatches.length === 0) {
                 botResponse = "I understood those symptoms, but I couldn't find a matching record in my database. Please consult a doctor.";
             } else {
@@ -113,11 +135,10 @@ const sendMessage = async (req, res) => {
                     // Actually, let's ask one more check if we are not 100% sure? 
                     // For simplicity: If >75% match, show result. Else ask missing.
 
-                    const missingSymptoms = topDisease.symptoms.filter(s => !newSymptoms.includes(s));
+                    const nextSymptom = getNextSymptom(topDisease, newSymptoms, session.context.rejectedSymptoms);
 
-                    if (missingSymptoms.length > 0 && (matchCount / totalSymptoms) < 0.8) {
+                    if (nextSymptom && (matchCount / totalSymptoms) < 0.8) {
                         // Ask follow up
-                        const nextSymptom = missingSymptoms[0];
                         botResponse = `Do you also experience **${nextSymptom}**?`;
                         session.context.lastQuestionType = 'symptom_check';
                         session.context.pendingSymptom = nextSymptom;
@@ -138,9 +159,8 @@ const sendMessage = async (req, res) => {
                     }
                 } else {
                     // Weak match, ask follow up
-                    const missingSymptoms = topDisease.symptoms.filter(s => !newSymptoms.includes(s));
-                    if (missingSymptoms.length > 0) {
-                        const nextSymptom = missingSymptoms[0];
+                    const nextSymptom = getNextSymptom(topDisease, newSymptoms, session.context.rejectedSymptoms);
+                    if (nextSymptom) {
                         botResponse = `Do you also experience **${nextSymptom}**?`;
                         session.context.lastQuestionType = 'symptom_check';
                         session.context.pendingSymptom = nextSymptom;
@@ -163,7 +183,9 @@ const sendMessage = async (req, res) => {
 
         session.messages.push({ sender: 'bot', text: botResponse });
         session.updatedAt = Date.now();
+        console.log("ChatController: Saving session with", session.messages.length, "messages");
         await session.save();
+        console.log("ChatController: Session saved.");
 
         res.json(session);
 
@@ -175,7 +197,7 @@ const sendMessage = async (req, res) => {
 
 const getHistory = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.userId;
         const session = await ChatSession.findOne({ userId });
         res.json(session ? session.messages : []);
     } catch (err) {

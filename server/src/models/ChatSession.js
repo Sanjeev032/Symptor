@@ -31,6 +31,10 @@ const ChatSessionSchema = new mongoose.Schema({
         confirmedSymptoms: [{
             type: String
         }],
+        // Symptoms the user has denied/rejected
+        rejectedSymptoms: [{
+            type: String
+        }],
         // The last question asked by the bot (to handle the answer)
         lastQuestionType: {
             type: String, // 'symptom_check', 'general', 'greeting'

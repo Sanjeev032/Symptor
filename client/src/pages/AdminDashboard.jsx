@@ -5,7 +5,6 @@ import { Trash2, Plus, X } from 'lucide-react';
 const AdminDashboard = () => {
     const { token } = useAuth();
     const [diseases, setDiseases] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
 
     // Form State
@@ -28,8 +27,6 @@ const AdminDashboard = () => {
             if (res.ok) setDiseases(data);
         } catch (err) {
             console.error(err);
-        } finally {
-            setLoading(false);
         }
     };
 

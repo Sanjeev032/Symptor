@@ -1,7 +1,41 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useVisualization } from '../../context/VisualizationContext';
-import { MessageCircle, X, Send, Bot, User, Minimize2 } from 'lucide-react';
+import { MessageCircle, Send, Bot, Minimize2 } from 'lucide-react';
+
+const SYMPTOM_MAP = {
+    'head': ['head'],
+    'brain': ['brain'],
+    'headache': ['head'],
+    'migraine': ['head'],
+    'dizzy': ['head'],
+    'chest': ['chest'],
+    'heart': ['heart'],
+    'palpitations': ['heart'],
+    'lung': ['l_lung', 'r_lung'],
+    'breath': ['l_lung', 'r_lung'],
+    'cough': ['l_lung', 'r_lung'],
+    'stomach': ['stomach'],
+    'tummy': ['stomach'],
+    'belly': ['stomach'],
+    'abdomen': ['abdomen'],
+    'gut': ['intestines'],
+    'bowel': ['intestines'],
+    'liver': ['liver'],
+    'back': ['spine'],
+    'spine': ['spine'],
+    'arm': ['arm'],
+    'hand': ['arm'],
+    'shoulder': ['arm'],
+    'leg': ['leg'],
+    'foot': ['leg'],
+    'knee': ['leg'],
+    'toes': ['leg'],
+    'skin': ['skin'],
+    'rash': ['skin'],
+    'itch': ['skin'],
+    'burn': ['skin']
+};
 
 const ChatWidget = () => {
     const { token, user } = useAuth();
@@ -23,7 +57,7 @@ const ChatWidget = () => {
                 })
                 .catch(err => console.error("Chat Error:", err));
         }
-    }, [isOpen, token]);
+    }, [isOpen, token, messages.length]);
 
     // Auto Scroll
     useEffect(() => {
@@ -42,44 +76,11 @@ const ChatWidget = () => {
         setInputText('');
 
         // Symptom/Body Part Detection Logic
-        const symptomMap = {
-            'head': ['head'],
-            'brain': ['brain'],
-            'headache': ['head'],
-            'migraine': ['head'],
-            'dizzy': ['head'],
-            'chest': ['chest'],
-            'heart': ['heart'],
-            'palpitations': ['heart'],
-            'lung': ['l_lung', 'r_lung'],
-            'breath': ['l_lung', 'r_lung'],
-            'cough': ['l_lung', 'r_lung'],
-            'stomach': ['stomach'],
-            'tummy': ['stomach'],
-            'belly': ['stomach'],
-            'abdomen': ['abdomen'],
-            'gut': ['intestines'],
-            'bowel': ['intestines'],
-            'liver': ['liver'],
-            'back': ['spine'],
-            'spine': ['spine'],
-            'arm': ['arm'],
-            'hand': ['arm'],
-            'shoulder': ['arm'],
-            'leg': ['leg'],
-            'foot': ['leg'],
-            'knee': ['leg'],
-            'toes': ['leg'],
-            'skin': ['skin'],
-            'rash': ['skin'],
-            'itch': ['skin'],
-            'burn': ['skin']
-        };
-
+        // Symptom/Body Part Detection Logic
         const foundOrgans = new Set();
-        Object.keys(symptomMap).forEach(key => {
+        Object.keys(SYMPTOM_MAP).forEach(key => {
             if (text.includes(key)) {
-                symptomMap[key].forEach(id => foundOrgans.add(id));
+                SYMPTOM_MAP[key].forEach(id => foundOrgans.add(id));
             }
         });
 
@@ -93,6 +94,7 @@ const ChatWidget = () => {
         setLoading(true);
 
         try {
+            console.log("ChatWidget: Sending message...", inputText);
             const res = await fetch('http://localhost:5000/api/chat/message', {
                 method: 'POST',
                 headers: {
@@ -102,11 +104,15 @@ const ChatWidget = () => {
                 body: JSON.stringify({ message: inputText })
             });
             const data = await res.json();
+            console.log("ChatWidget: Server response:", data);
 
             // Limit message list or just replace with server state
             // For smoother UX, we just append the BOT's response from the server state
             if (data.messages) {
+                console.log("ChatWidget: Updating messages from server:", data.messages);
                 setMessages(data.messages);
+            } else {
+                console.warn("ChatWidget: No messages in server response!", data);
             }
         } catch (err) {
             console.error(err);

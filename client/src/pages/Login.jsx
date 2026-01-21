@@ -25,6 +25,7 @@ const Login = () => {
                 setError(data.message || 'Login failed');
             }
         } catch (err) {
+            console.error(err);
             setError('Server error');
         }
     };
