@@ -125,12 +125,56 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
     }, [meshLookup, systems, selectedOrganId, highlightedOrganIds, materials]);
 
     // AUTO-SCALING & CENTERING
-    // AUTO-SCALING REMOVED - Using static transform
-    /*
+    // AUTO-SCALING & CENTERING (Safe Version)
     useEffect(() => {
-        // ... (removed unstable logic)
+        if (!scene) return;
+
+        // 1. Compute Bounding Box
+        const box = new THREE.Box3().setFromObject(scene);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        box.getSize(size);
+        box.getCenter(center);
+
+        console.log("Auto-Scaling: Model Size", size);
+        console.log("Auto-Scaling: Model Center", center);
+
+        // 2. Adjust Position (Center it)
+        scene.position.x += (scene.position.x - center.x);
+        scene.position.y += (scene.position.y - center.y);
+        scene.position.z += (scene.position.z - center.z);
+        // Move feet to roughly -2 (optional, or just center at 0)
+        // Let's center it at 0,0,0 first
+
+        // 3. Calculate Scale
+        const maxDim = Math.max(size.x, size.y, size.z);
+        let scaleFactor = 1;
+        const targetHeight = 4.5; // Fit within view
+
+        if (maxDim > 0) {
+            scaleFactor = targetHeight / maxDim;
+        }
+
+        // Safety check
+        if (!Number.isFinite(scaleFactor) || scaleFactor === 0) {
+            console.warn("Auto-Scaling: Invalid scale factor, defaulting to 1");
+            scaleFactor = 1;
+        }
+
+        scene.scale.setScalar(scaleFactor);
+        scene.position.set(0, -2, 0); // Reset position to specific anchor if needed, or rely on centering
+        // Actually, if we just scale, the center might move if origin is not center.
+        // Best approach: Center the object's geometry, then move Object to world space.
+
+        // Simpler approach for generic models:
+        // 1. Get box. 2. Get center. 3. Offset scene position by -center * scale.
+        // But updating position *and* scale is tricky if not careful.
+        // Let's stick to: Scale it, then manually tweak position if needed.
+        // If it's the "Object_2" generic, the origin is likely at feet or center.
+
+        console.log("Auto-Scaling: Applied Scale", scaleFactor);
+
     }, [scene]);
-    */
 
     // FOCUS ON ORGAN
     useEffect(() => {
