@@ -57,6 +57,7 @@ const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlight
         const lookup = {};
         scene.traverse((child) => {
             if (child.isMesh) {
+                console.log("Found Mesh:", child.name);
                 // Find which organ this mesh belongs to
                 let ownerId = null;
                 for (const [id, names] of Object.entries(organMap)) {
