@@ -20,7 +20,7 @@ const AdminDashboard = () => {
 
     const fetchDiseases = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/admin/diseases', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/diseases`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -37,7 +37,7 @@ const AdminDashboard = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure?')) return;
         try {
-            await fetch(`http://localhost:5000/api/admin/diseases/${id}`, {
+            await fetch(`${import.meta.env.VITE_API_URL}/api/admin/diseases/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -60,7 +60,7 @@ const AdminDashboard = () => {
         };
 
         try {
-            const res = await fetch('http://localhost:5000/api/admin/diseases', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/diseases`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

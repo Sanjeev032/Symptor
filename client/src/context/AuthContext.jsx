@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
 
             try {
                 // We use the existing /api/auth/user endpoint to validate token and get user details
-                const res = await fetch('http://localhost:5000/api/auth/user', {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/user`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 

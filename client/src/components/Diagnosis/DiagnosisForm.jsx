@@ -13,7 +13,7 @@ const DiagnosisForm = ({ onDiagnosis }) => {
 
     // ... (useEffect and handleSubmit remain same)
     useEffect(() => {
-        fetch('http://localhost:5000/api/diagnosis/symptoms')
+        fetch(`${import.meta.env.VITE_API_URL}/api/diagnosis/symptoms`)
             .then(res => res.json())
             .then(data => {
                 const options = data.map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }));
@@ -35,7 +35,7 @@ const DiagnosisForm = ({ onDiagnosis }) => {
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
-            const response = await fetch('http://localhost:5000/api/diagnosis', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/diagnosis`, {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({

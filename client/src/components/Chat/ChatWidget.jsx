@@ -48,7 +48,7 @@ const ChatWidget = () => {
     // Load History
     useEffect(() => {
         if (isOpen && token && messages.length === 0) {
-            fetch('http://localhost:5000/api/chat/history', {
+            fetch(`${import.meta.env.VITE_API_URL}/api/chat/history`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
                 .then(res => res.json())
@@ -95,7 +95,7 @@ const ChatWidget = () => {
 
         try {
             console.log("ChatWidget: Sending message...", inputText);
-            const res = await fetch('http://localhost:5000/api/chat/message', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/chat/message`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
