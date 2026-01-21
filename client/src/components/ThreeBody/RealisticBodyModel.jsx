@@ -4,8 +4,8 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 const RealisticBodyModel = ({ systems, onSelectOrgan, selectedOrganId, highlightedOrganIds = [], onFocusOrgan }) => {
-    // Disable Draco for now to rule out CDN issues
-    const { scene } = useGLTF('/models/human_anatomy.glb');
+    // Enable Draco compression (true calls the default CDN for decoders)
+    const { scene } = useGLTF('/models/human_anatomy.glb', true);
     const modelRef = useRef();
 
     // MATERIALS: Create shared materials once to reduce memory usage and draw calls
