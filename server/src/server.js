@@ -5,6 +5,9 @@ const connectDB = require('./config/db');
 
 dotenv.config();
 
+// Force restart trigger
+console.log("Server starting...");
+
 const app = express();
 
 // Middleware
@@ -19,6 +22,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/diagnosis', require('./routes/diagnosisRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/recommendations', require('./routes/recommendationRoutes'));
 
 app.get('/', (req, res) => {
     res.send('Medical App Backend Running');

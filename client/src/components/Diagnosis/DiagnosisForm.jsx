@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import Select from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 import { useAuth } from '../../context/AuthContext';
-import { ChevronDown, ChevronUp, Activity, X } from 'lucide-react';
+import { Activity, X } from 'lucide-react';
+import RecommendationCard from './RecommendationCard';
 
 const DiagnosisForm = ({ onDiagnosis }) => {
     const [availableSymptoms, setAvailableSymptoms] = useState([]);
     const [selectedSymptoms, setSelectedSymptoms] = useState([]);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
-    const [isMinimized, setIsMinimized] = useState(false); // New State
     const { token } = useAuth();
 
     // ... (useEffect and handleSubmit remain same)
@@ -53,123 +53,91 @@ const DiagnosisForm = ({ onDiagnosis }) => {
     };
 
     const customStyles = {
-        control: (base) => ({
+        control: (base, state) => ({
             ...base,
-            background: 'rgba(30, 41, 59, 0.6)',
-            borderColor: 'rgba(51, 65, 85, 0.5)',
-            color: 'white',
-            backdropFilter: 'blur(4px)'
+            background: 'white',
+            borderColor: state.isFocused ? 'var(--primary)' : 'var(--border-light)',
+            boxShadow: state.isFocused ? '0 0 0 3px rgba(5, 150, 105, 0.1)' : 'none',
+            padding: '4px',
+            borderRadius: '10px',
+            '&:hover': {
+                borderColor: 'var(--primary)'
+            }
         }),
         menu: (base) => ({
             ...base,
-            background: '#1e293b',
-            color: 'white',
-            zIndex: 100
+            zIndex: 100,
+            borderRadius: '10px',
+            border: '1px solid var(--border-light)',
+            boxShadow: 'var(--shadow-card)',
+            padding: '8px'
         }),
         option: (base, state) => ({
             ...base,
-            background: state.isFocused ? '#334155' : '#1e293b',
-            color: 'white',
-            cursor: 'pointer'
+            background: state.isFocused ? 'var(--bg-subtle)' : 'white',
+            color: 'var(--text-main)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            padding: '10px 12px',
+            fontSize: '0.9rem'
         }),
         multiValue: (base) => ({
             ...base,
-            background: 'rgba(56, 189, 248, 0.2)',
-            border: '1px solid rgba(56, 189, 248, 0.3)',
+            background: 'var(--bg-subtle)',
+            borderRadius: '6px',
+            border: '1px solid var(--border-light)'
         }),
         multiValueLabel: (base) => ({
             ...base,
-            color: '#e0f2fe',
+            color: 'var(--text-main)',
+            fontWeight: '500'
         }),
         multiValueRemove: (base) => ({
             ...base,
-            color: '#94a3b8',
+            color: 'var(--text-muted)',
             ':hover': {
-                background: '#ef4444',
-                color: 'white'
+                background: '#fee2e2',
+                color: '#ef4444'
             }
-        }),
-        input: (base) => ({
-            ...base,
-            color: 'white'
         })
     };
 
-    // If minimized, show a sleek button
-    if (isMinimized) {
-        return (
-            <button
-                onClick={() => setIsMinimized(false)}
-                style={{
-                    position: 'absolute',
-                    top: '20px',
-                    left: '20px',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    backdropFilter: 'blur(12px)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    padding: '12px 20px',
-                    borderRadius: '12px',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                    zIndex: 20,
-                    transition: 'all 0.3s ease'
-                }}
-            >
-                <Activity size={20} color="#38bdf8" />
-                <span style={{ fontWeight: 500 }}>Symptom Checker</span>
-            </button>
-        );
-    }
-
     return (
         <div style={{
-            position: 'absolute',
-            top: '20px',
-            left: '20px',
-            width: '340px',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            background: 'rgba(15, 23, 42, 0.75)', // Glassmorphism
-            backdropFilter: 'blur(16px)',
-            padding: '24px',
-            borderRadius: '20px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            color: 'white',
-            zIndex: 20,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            width: '100%',
+            background: 'var(--bg-glass-card)',
+            backdropFilter: 'var(--backdrop-blur)',
+            padding: '40px',
+            borderRadius: 'var(--radius-lg)',
+            border: 'var(--glass-border)',
+            boxShadow: 'var(--glass-shadow)',
             transition: 'all 0.3s ease'
         }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ background: 'rgba(56, 189, 248, 0.15)', padding: '8px', borderRadius: '10px' }}>
-                        <Activity size={20} color="#38bdf8" />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ background: 'rgba(5, 150, 105, 0.1)', padding: '12px', borderRadius: '16px' }}>
+                        <Activity size={28} color="var(--primary)" />
                     </div>
-                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, letterSpacing: '0.5px' }}>Check Symptoms</h2>
+                    <div>
+                        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-heading)', letterSpacing: '-0.025em' }}>Symptom Checker</h2>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>AI-powered preliminary diagnosis</p>
+                    </div>
                 </div>
-                <button
-                    onClick={() => setIsMinimized(true)}
-                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
-                >
-                    <ChevronUp size={20} />
-                </button>
             </div>
 
             <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '10px', fontSize: '0.85rem', color: '#94a3b8', fontWeight: 500 }}>
+                <div style={{ marginBottom: '24px' }}>
+                    <label style={{ display: 'block', marginBottom: '10px', fontSize: '0.95rem', color: 'var(--text-heading)', fontWeight: 700 }}>
                         What are you feeling?
                     </label>
-                    <Select
+                    <CreatableSelect
                         isMulti
                         options={availableSymptoms}
                         value={selectedSymptoms}
-                        onChange={setSelectedSymptoms}
+                        onChange={(newValue) => setSelectedSymptoms(newValue)}
                         styles={customStyles}
-                        placeholder="Search symptoms..."
+                        placeholder="Type symptoms (e.g., headache, fever)..."
+                        formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
                     />
                 </div>
 
@@ -178,65 +146,101 @@ const DiagnosisForm = ({ onDiagnosis }) => {
                     disabled={loading}
                     style={{
                         width: '100%',
-                        padding: '14px',
-                        borderRadius: '12px',
+                        padding: '16px',
+                        borderRadius: 'var(--radius-md)',
                         border: 'none',
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        background: 'var(--primary)',
                         color: 'white',
-                        fontWeight: '600',
-                        fontSize: '0.95rem',
+                        fontWeight: '700',
+                        fontSize: '1.1rem',
                         cursor: loading ? 'not-allowed' : 'pointer',
-                        opacity: loading ? 0.7 : 1,
-                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
-                        transition: 'transform 0.2s, box-shadow 0.2s'
+                        opacity: loading ? 0.8 : 1,
+                        boxShadow: '0 8px 20px -4px rgba(5, 150, 105, 0.3)',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '10px',
+                        marginTop: '16px'
                     }}
-                    onMouseOver={e => !loading && (e.currentTarget.style.transform = 'translateY(-1px)')}
-                    onMouseOut={e => !loading && (e.currentTarget.style.transform = 'translateY(0)')}
+                    onMouseOver={e => !loading && (e.currentTarget.style.background = 'var(--primary-hover)')}
+                    onMouseOut={e => !loading && (e.currentTarget.style.background = 'var(--primary)')}
                 >
-                    {loading ? 'Analyzing...' : 'Analyze Symptoms'}
+                    {loading ? <Activity className="animate-spin" size={24} /> : 'Analyze Symptoms'}
                 </button>
             </form>
 
             {result && result.details ? (
-                <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#e0f2fe', fontWeight: 600 }}>{result.diagnosis}</h3>
+                <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid var(--border-light)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-heading)', fontWeight: 700, letterSpacing: '-0.025em' }}>{result.diagnosis}</h3>
+                            {result.isAiPrediction && (
+                                <span style={{
+                                    fontSize: '0.75rem',
+                                    background: '#f3e8ff', // Soft Purple
+                                    color: '#7e22ce',
+                                    padding: '4px 10px',
+                                    borderRadius: '20px',
+                                    fontWeight: '600',
+                                    border: '1px solid #d8b4fe'
+                                }}>
+                                    AI Insight
+                                </span>
+                            )}
+                        </div>
                         <span style={{
-                            padding: '4px 10px',
+                            padding: '6px 12px',
                             borderRadius: '20px',
-                            fontSize: '0.75rem',
-                            fontWeight: '700',
-                            background: result.severity === 'Critical' ? 'rgba(239, 68, 68, 0.2)' :
-                                result.severity === 'High' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-                            color: result.severity === 'Critical' ? '#fca5a5' :
-                                result.severity === 'High' ? '#fcd34d' : '#86efac',
-                            border: `1px solid ${result.severity === 'Critical' ? 'rgba(239, 68, 68, 0.3)' :
-                                result.severity === 'High' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            background: result.severity === 'Critical' ? '#fee2e2' :
+                                result.severity === 'High' ? '#fef3c7' : '#d1fae5',
+                            color: result.severity === 'Critical' ? '#dc2626' :
+                                result.severity === 'High' ? '#d97706' : '#059669',
+                            border: `1px solid ${result.severity === 'Critical' ? '#fca5a5' :
+                                result.severity === 'High' ? '#fcd34d' : '#6ee7b7'
+                                }`
                         }}>
-                            {result.severity.toUpperCase()}
+                            {result.severity && result.severity.toUpperCase ? result.severity.toUpperCase() : 'UNKNOWN'}
                         </span>
                     </div>
 
-                    <p style={{ fontSize: '0.9rem', color: '#cbd5e1', lineHeight: '1.6', marginBottom: '16px' }}>
+                    <p style={{ fontSize: '1rem', color: 'var(--text-main)', lineHeight: '1.7', marginBottom: '24px' }}>
                         {result.details.description}
                     </p>
 
-                    <div style={{ background: 'rgba(15, 23, 42, 0.4)', padding: '16px', borderRadius: '12px', marginBottom: '16px' }}>
-                        <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Treatment Plan</h4>
-                        <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.9rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            {result.details.treatment && result.details.treatment.map((t, i) => (
+                    <div style={{ background: 'var(--bg-subtle)', padding: '24px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border-subtle)' }}>
+                        <h4 style={{ margin: '0 0 16px 0', fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Treatment Plan</h4>
+                        <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.95rem', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {result.details.treatment && Array.isArray(result.details.treatment) && result.details.treatment.map((t, i) => (
                                 <li key={i}>{t}</li>
                             ))}
                         </ul>
                     </div>
 
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', textAlign: 'center' }}>
-                        AI-generated diagnosis. Consult a doctor for medical advice.
+                    {/* Yoga & Exercise Recommendations */}
+                    {result.recommendations && result.recommendations.length > 0 && (
+                        <div style={{ marginTop: '32px' }}>
+                            <h4 style={{ margin: '0 0 20px 0', fontSize: '1.1rem', color: 'var(--text-heading)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <Activity size={20} color="var(--primary)" /> Recovery Guidance
+                            </h4>
+                            <div style={{ display: 'grid', gap: '16px' }}>
+                                {result.recommendations.map((rec) => (
+                                    <RecommendationCard key={rec._id} recommendation={rec} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '32px', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
+                        AI-generated diagnosis. Consult a doctor for professional medical advice.
                     </div>
                 </div>
             ) : result && (
-                <div style={{ marginTop: '20px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                    <p style={{ margin: 0, color: '#fca5a5', fontSize: '0.9rem', textAlign: 'center' }}>{result.message || 'No diagnosis found.'}</p>
+                <div style={{ marginTop: '24px', padding: '16px', background: '#fee2e2', borderRadius: '12px', border: '1px solid #fca5a5', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <X color="#dc2626" />
+                    <p style={{ margin: 0, color: '#b91c1c', fontSize: '0.95rem', fontWeight: '500' }}>{result.message || 'No diagnosis found.'}</p>
                 </div>
             )}
         </div>

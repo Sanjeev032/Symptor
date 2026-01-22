@@ -1,41 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useVisualization } from '../../context/VisualizationContext';
 import { MessageCircle, Send, Bot, Minimize2 } from 'lucide-react';
 
-const SYMPTOM_MAP = {
-    'head': ['head'],
-    'brain': ['brain'],
-    'headache': ['head'],
-    'migraine': ['head'],
-    'dizzy': ['head'],
-    'chest': ['chest'],
-    'heart': ['heart'],
-    'palpitations': ['heart'],
-    'lung': ['l_lung', 'r_lung'],
-    'breath': ['l_lung', 'r_lung'],
-    'cough': ['l_lung', 'r_lung'],
-    'stomach': ['stomach'],
-    'tummy': ['stomach'],
-    'belly': ['stomach'],
-    'abdomen': ['abdomen'],
-    'gut': ['intestines'],
-    'bowel': ['intestines'],
-    'liver': ['liver'],
-    'back': ['spine'],
-    'spine': ['spine'],
-    'arm': ['arm'],
-    'hand': ['arm'],
-    'shoulder': ['arm'],
-    'leg': ['leg'],
-    'foot': ['leg'],
-    'knee': ['leg'],
-    'toes': ['leg'],
-    'skin': ['skin'],
-    'rash': ['skin'],
-    'itch': ['skin'],
-    'burn': ['skin']
-};
+
 
 const ChatWidget = () => {
     const { token, user } = useAuth();
@@ -64,45 +31,33 @@ const ChatWidget = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const { highlightOrgans } = useVisualization();
-
-    // ... (rest of state)
-
     const handleSend = async (e) => {
         e.preventDefault();
         if (!inputText.trim()) return;
 
         const text = inputText.toLowerCase();
-        setInputText('');
-
-        // Symptom/Body Part Detection Logic
-        // Symptom/Body Part Detection Logic
-        const foundOrgans = new Set();
-        Object.keys(SYMPTOM_MAP).forEach(key => {
-            if (text.includes(key)) {
-                SYMPTOM_MAP[key].forEach(id => foundOrgans.add(id));
-            }
-        });
-
-        if (foundOrgans.size > 0) {
-            highlightOrgans(Array.from(foundOrgans));
-        }
 
         // Optimistic UI Update
         const tempMsg = { sender: 'user', text: inputText, timestamp: new Date() };
         setMessages(prev => [...prev, tempMsg]);
+        setInputText('');
         setLoading(true);
 
         try {
             console.log("ChatWidget: Sending message...", inputText);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/chat/message`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ message: inputText })
+                body: JSON.stringify({ message: inputText }),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
             const data = await res.json();
             console.log("ChatWidget: Server response:", data);
 
@@ -116,7 +71,11 @@ const ChatWidget = () => {
             }
         } catch (err) {
             console.error(err);
-            setMessages(prev => [...prev, { sender: 'bot', text: 'Error connecting to server. Please try again.', timestamp: new Date() }]);
+            let errorMessage = 'Error connecting to server. Please try again.';
+            if (err.name === 'AbortError') {
+                errorMessage = 'Request timed out. Server is taking too long.';
+            }
+            setMessages(prev => [...prev, { sender: 'bot', text: errorMessage, timestamp: new Date() }]);
         } finally {
             setLoading(false);
         }

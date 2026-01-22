@@ -1,19 +1,65 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
   font-weight: 400;
-  color-scheme: dark;
-  color: white;
-  background-color: #0f172a;
+
+  /* Premium Sage Green & Emerald Palette */
+  --primary: #059669;
+  /* Emerald 600 - Main Brand Color */
+  --primary-hover: #047857;
+  /* Emerald 700 - Hover State */
+  --primary-light: #34d399;
+  /* Emerald 400 - Accents/Glows */
+  --secondary: #6ee7b7;
+  /* Emerald 300 - Soft Highlight */
+  --accent: #10b981;
+  /* Emerald 500 - Active Elements */
+
+  /* Glassmorphism Backgrounds */
+  --bg-gradient: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
+  /* Light Sage Gradient */
+  --bg-glass: rgba(255, 255, 255, 0.65);
+  /* High transparency for glass effect */
+  --bg-glass-card: rgba(255, 255, 255, 0.85);
+  /* Slightly clearer for content */
+  --bg-subtle: rgba(241, 245, 249, 0.5);
+  /* Slate 100 with opacity */
+
+  /* Text Colors */
+  --text-heading: #064e3b;
+  /* Emerald 900 - Deepest Green for confident headers */
+  --text-main: #334155;
+  /* Slate 700 - Readable body text */
+  --text-muted: #64748b;
+  /* Slate 500 - Secondary text */
+  --text-inverse: #ffffff;
+  /* White text on dark backgrounds */
+
+  /* Borders & Shadows */
+  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+
+  /* Utils */
+  --backdrop-blur: blur(12px);
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+
+  color-scheme: light;
 }
 
 body {
   margin: 0;
   padding: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background: #0f172a;
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  /* Ensures gradient covers full scroll */
+  color: var(--text-main);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .app-container {

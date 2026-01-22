@@ -1,5 +1,6 @@
 const Disease = require('../models/Disease');
 const DiagnosisHistory = require('../models/DiagnosisHistory');
+const Recommendation = require('../models/Recommendation');
 
 // Extract all unique symptoms for the frontend dropdown
 const getSymptoms = async (req, res) => {
@@ -47,12 +48,18 @@ const diagnose = async (req, res) => {
         // Filter out those with 0 matches
         const possibleDiseases = scoredDiseases.filter(d => d.matchScore > 0);
 
+        const { reliableChatMessage } = require('../utils/aiClient');
+
+        // ...
+
         if (possibleDiseases.length > 0) {
             // Pick top result
             bestMatch = possibleDiseases[0];
 
             // Save to history if user is authenticated
-            // Note: req.user is set by authMiddleware
+            let historyData = {};
+
+            // Save to history if user is authenticated
             if (req.user) {
                 const history = new DiagnosisHistory({
                     user: req.user.userId,
@@ -61,26 +68,102 @@ const diagnose = async (req, res) => {
                     severity: bestMatch.severity,
                     affectedSystems: bestMatch.affectedSystems
                 });
-                await history.save();
+                const savedHistory = await history.save();
+                historyData = {
+                    _id: savedHistory._id,
+                    createdAt: savedHistory.createdAt
+                };
             }
 
+            // Fetch Recommendations (Yoga & Exercises)
+            const recommendations = await Recommendation.find({
+                symptoms: { $in: symptoms.map(s => new RegExp(s, 'i')) } // simple regex match
+            });
+
             res.json({
+                ...historyData,
+                symptoms: symptoms,
                 diagnosis: bestMatch.name,
                 severity: bestMatch.severity,
                 affectedSystems: bestMatch.affectedSystems,
                 affectedOrgans: bestMatch.affectedOrgans,
-                details: bestMatch
+                details: bestMatch,
+                recommendations: recommendations,
+                isAiPrediction: false
             });
         } else {
-            res.json({
-                diagnosis: "Unknown Condition",
-                severity: "Low",
-                affectedSystems: [],
-                affectedOrgans: [],
-                message: "No matching conditions found for these symptoms."
-            });
-        }
+            console.log("DiagnosisController: No local match found. Asking Llama...");
 
+            // Llama Fallback
+            const prompt = `
+                Patient Symptoms: ${symptoms.join(', ')}.
+                
+                Task: Diagnose the most likely medical condition.
+                Output: JSON Object ONLY.
+                Format: 
+                {
+                    "name": "Disease Name",
+                    "severity": "Low" | "Medium" | "High" | "Critical",
+                    "description": "Short description (max 2 sentences)",
+                    "treatment": ["Step 1", "Step 2"],
+                    "affectedSystems": ["System 1", "System 2"]
+                }
+                Disclaimer: You are AI. If unsafe, return severe "Consult Doctor".
+            `;
+
+            try {
+                const aiResponseStr = await reliableChatMessage([
+                    { role: "system", content: "You are a medical diagnosis AI. Output valid JSON only." },
+                    { role: "user", content: prompt }
+                ], { jsonMode: true });
+
+                const aiResult = JSON.parse(aiResponseStr);
+
+                // Save AI result to history too? Maybe with a flag.
+                let historyData = {};
+
+                // Save AI result
+                if (req.user) {
+                    const history = new DiagnosisHistory({
+                        user: req.user.userId,
+                        symptoms: symptoms,
+                        diagnosis: aiResult.name + " (AI)",
+                        severity: aiResult.severity,
+                        affectedSystems: aiResult.affectedSystems
+                    });
+                    const savedHistory = await history.save();
+                    historyData = {
+                        _id: savedHistory._id,
+                        createdAt: savedHistory.createdAt
+                    };
+                }
+
+                res.json({
+                    ...historyData,
+                    symptoms: symptoms,
+                    diagnosis: aiResult.name,
+                    severity: aiResult.severity,
+                    affectedSystems: aiResult.affectedSystems,
+                    details: {
+                        description: aiResult.description,
+                        treatment: aiResult.treatment
+                    },
+                    recommendations: [], // AI could suggest these too in future
+                    isAiPrediction: true,
+                    message: "Diagnosis provided by Llama AI."
+                });
+
+            } catch (aiErr) {
+                console.error("AI Diagnosis Failed:", aiErr);
+                res.json({
+                    diagnosis: "Unknown Condition",
+                    severity: "Low",
+                    affectedSystems: [],
+                    affectedOrgans: [],
+                    message: "No matching conditions found and AI analysis failed."
+                });
+            }
+        }
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
