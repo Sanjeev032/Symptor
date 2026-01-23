@@ -5,11 +5,15 @@ import { useAuth } from '../context/AuthContext';
 const Register = () => {
     const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'user' });
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
+        setError('');
+
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
                 method: 'POST',
@@ -27,192 +31,90 @@ const Register = () => {
         } catch (err) {
             console.error(err);
             setError('Server error');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px' }}>
-            <div style={{
-                background: 'var(--bg-glass-card)',
-                backdropFilter: 'var(--backdrop-blur)',
-                padding: '48px',
-                borderRadius: 'var(--radius-lg)',
-                width: '100%',
-                maxWidth: '480px',
-                border: 'var(--glass-border)',
-                boxShadow: 'var(--glass-shadow)'
-            }}>
-                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                    <h2 style={{ color: 'var(--text-heading)', fontSize: '2rem', fontWeight: '700', marginBottom: '8px' }}>Create Account</h2>
-                    <p style={{ color: 'var(--text-muted)', margin: 0 }}>Join Symptor.AI today</p>
+        <div className="auth-wrapper">
+            <div className="auth-card">
+                <div className="text-center mb-6">
+                    <h2 className="card-title" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Create Account</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>Join Symptor.AI today</p>
                 </div>
 
                 {error && (
-                    <div style={{
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        color: '#ef4444',
-                        padding: '12px',
-                        borderRadius: 'var(--radius-sm)',
-                        marginBottom: '24px',
-                        fontSize: '0.9rem',
-                        textAlign: 'center'
-                    }}>
+                    <div className="alert alert-error text-center">
                         {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main)', marginLeft: '4px' }}>Full Name</label>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Full Name</label>
                         <input
+                            className="form-input"
                             type="text"
                             placeholder="Dr. John Doe"
                             required
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            style={{
-                                padding: '14px 16px',
-                                borderRadius: 'var(--radius-sm)',
-                                border: '1px solid var(--border-light)',
-                                background: 'rgba(255, 255, 255, 0.5)',
-                                color: 'var(--text-heading)',
-                                fontSize: '1rem',
-                                outline: 'none',
-                                transition: 'all 0.2s'
-                            }}
-                            onFocus={(e) => {
-                                e.target.style.borderColor = 'var(--primary)';
-                                e.target.style.background = 'white';
-                                e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
-                            }}
-                            onBlur={(e) => {
-                                e.target.style.borderColor = 'var(--border-light)';
-                                e.target.style.background = 'rgba(255, 255, 255, 0.5)';
-                                e.target.style.boxShadow = 'none';
-                            }}
                         />
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main)', marginLeft: '4px' }}>Email</label>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Email</label>
                         <input
+                            className="form-input"
                             type="email"
                             placeholder="name@example.com"
                             required
                             value={formData.email}
                             onChange={e => setFormData({ ...formData, email: e.target.value })}
-                            style={{
-                                padding: '14px 16px',
-                                borderRadius: 'var(--radius-sm)',
-                                border: '1px solid var(--border-light)',
-                                background: 'rgba(255, 255, 255, 0.5)',
-                                color: 'var(--text-heading)',
-                                fontSize: '1rem',
-                                outline: 'none',
-                                transition: 'all 0.2s'
-                            }}
-                            onFocus={(e) => {
-                                e.target.style.borderColor = 'var(--primary)';
-                                e.target.style.background = 'white';
-                                e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
-                            }}
-                            onBlur={(e) => {
-                                e.target.style.borderColor = 'var(--border-light)';
-                                e.target.style.background = 'rgba(255, 255, 255, 0.5)';
-                                e.target.style.boxShadow = 'none';
-                            }}
                         />
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main)', marginLeft: '4px' }}>Password</label>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Password</label>
                         <input
+                            className="form-input"
                             type="password"
                             placeholder="Create a strong password"
                             required
                             value={formData.password}
                             onChange={e => setFormData({ ...formData, password: e.target.value })}
-                            style={{
-                                padding: '14px 16px',
-                                borderRadius: 'var(--radius-sm)',
-                                border: '1px solid var(--border-light)',
-                                background: 'rgba(255, 255, 255, 0.5)',
-                                color: 'var(--text-heading)',
-                                fontSize: '1rem',
-                                outline: 'none',
-                                transition: 'all 0.2s'
-                            }}
-                            onFocus={(e) => {
-                                e.target.style.borderColor = 'var(--primary)';
-                                e.target.style.background = 'white';
-                                e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
-                            }}
-                            onBlur={(e) => {
-                                e.target.style.borderColor = 'var(--border-light)';
-                                e.target.style.background = 'rgba(255, 255, 255, 0.5)';
-                                e.target.style.boxShadow = 'none';
-                            }}
                         />
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main)', marginLeft: '4px' }}>Role</label>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Role</label>
                         <div style={{ position: 'relative' }}>
                             <select
+                                className="form-input"
                                 value={formData.role}
                                 onChange={e => setFormData({ ...formData, role: e.target.value })}
-                                style={{
-                                    width: '100%',
-                                    padding: '14px 16px',
-                                    borderRadius: 'var(--radius-sm)',
-                                    border: '1px solid var(--border-light)',
-                                    background: 'rgba(255, 255, 255, 0.5)',
-                                    color: 'var(--text-heading)',
-                                    fontSize: '1rem',
-                                    outline: 'none',
-                                    transition: 'all 0.2s',
-                                    appearance: 'none',
-                                    cursor: 'pointer'
-                                }}
-                                onFocus={(e) => {
-                                    e.target.style.borderColor = 'var(--primary)';
-                                    e.target.style.background = 'white';
-                                }}
-                                onBlur={(e) => {
-                                    e.target.style.borderColor = 'var(--border-light)';
-                                    e.target.style.background = 'rgba(255, 255, 255, 0.5)';
-                                }}
+                                style={{ appearance: 'none', cursor: 'pointer' }}
                             >
                                 <option value="user">Patient / User</option>
                                 <option value="admin">Medical Admin</option>
                             </select>
-                            <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }}>▼</div>
+                            <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)', fontSize: '0.8rem' }}>▼</div>
                         </div>
                     </div>
 
-                    <button type="submit" style={{
-                        marginTop: '12px',
-                        padding: '16px',
-                        borderRadius: 'var(--radius-sm)',
-                        border: 'none',
-                        background: 'var(--primary)',
-                        color: 'white',
-                        fontWeight: '600',
-                        fontSize: '1rem',
-                        cursor: 'pointer',
-                        transition: 'background 0.2s',
-                        boxShadow: '0 4px 6px -1px rgba(5, 150, 105, 0.2)'
-                    }}
-                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--primary-hover)'}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'var(--primary)'}
+                    <button
+                        type="submit"
+                        className="btn btn-primary btn-full"
+                        style={{ marginTop: '0.5rem', padding: '1rem' }}
+                        disabled={isLoading}
                     >
-                        Sign Up
+                        {isLoading ? 'Creating Account...' : 'Sign Up'}
                     </button>
                 </form>
 
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '32px', fontSize: '0.95rem' }}>
-                    Already have an account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none' }}>Log in</Link>
+                <p className="text-center mt-4" style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                    Already have an account? <Link to="/login" style={{ fontWeight: '600' }}>Log in</Link>
                 </p>
             </div>
         </div>

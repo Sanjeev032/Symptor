@@ -1,4 +1,5 @@
 const ChatSession = require('../models/ChatSession');
+const DiagnosisHistory = require('../models/DiagnosisHistory');
 const { reliableChatMessage } = require('../utils/aiClient');
 
 // Groq initialized inutils/aiClient.js
@@ -28,19 +29,46 @@ const sendMessage = async (req, res) => {
             content: msg.text
         }));
 
+        // 3.5 Fetch User Medical Context
+        const recentDiagnoses = await DiagnosisHistory.find({ user: userId })
+            .sort({ createdAt: -1 })
+            .limit(3)
+            .select('diagnosis symptoms severity createdAt');
+
+        let medicalContext = "";
+        if (recentDiagnoses.length > 0) {
+            medicalContext = "USER'S RECENT MEDICAL HISTORY (Use this for context if relevant):\n";
+            recentDiagnoses.forEach(d => {
+                medicalContext += `- Diagnosis: ${d.diagnosis} (Severity: ${d.severity})\n  Symptoms: ${d.symptoms.join(', ')}\n  Date: ${d.createdAt.toDateString()}\n`;
+            });
+        }
+
         // System Prompt
+        // SYSTEM: Safety Guardrails (Regex)
+        const SAFETY_REGEX = /\b(suicide|kill myself|crushing chest|severe pain|unbearable|stroke|heart attack|paralysis|numbness|10\/10|emergency)\b/i;
+        if (SAFETY_REGEX.test(message)) {
+            const safetyResponse = "⚠️ **IMPORTANT SAFETY ALERT** ⚠️\n\nYour description suggests a potential medical emergency. As an AI wellness assistant, I cannot evaluate these symptoms safely.\n\n**Please call emergency services (911) or visit the nearest Emergency Room immediately.**";
+
+            session.messages.push({ sender: 'bot', text: safetyResponse });
+            await session.save();
+            return res.json(session);
+        }
+
+        // System Prompt: Wellness Assistant Persona
         const systemMessage = {
             role: "system",
-            content: `You are Symptor, a medical interviewer AI.
+            content: `You are Symptor, a **Wellness Guidance Assistant**. You are NOT a doctor and cannot diagnose conditions.
             
-            CORE RULE: YOU MUST ASK FOLLOW-UP QUESTIONS.
+            CORE INSTRUCTIONS:
+            1. **ONE QUESTION RULE**: You must ask **ONLY ONE** short, simple question at a time. Do NOT ask multiple questions or lists. Wait for the user's answer.
+            2. **FLOW**: Follow this sequence for symptoms: Location -> Duration -> Severity (1-10) -> Triggers.
+            3. **TONE**: Use calm, non-clinical language. Say "discomfort" instead of "symptom". Be supportive.
+            4. **SAFETY**: If symptoms are severe (high pain, difficulty breathing, sudden onset), STOP asking questions and tell the user to see a doctor immediately.
+            5. **RESET**: If the user says "hi", "hello", or changes the topic, ignore the previous medical context and start fresh warmly.
             
-            When a user mentions a symptom:
-            1. DO NOT DIAGNOSE IMMEDIATELY.
-            2. You MUST ask 2-3 clarification questions (e.g., duration, severity, other symptoms).
-            3. Only after the user answers your questions can you provide insights.
+            ${medicalContext}
             
-            Disclaimer: You are an AI, not a doctor. Advise emergency care for serious symptoms.`
+            DISCLAIMER: Provide general wellness information only. Always end with: "Please consult a healthcare professional for advice."`
         };
 
         const messages = [systemMessage, ...history];
