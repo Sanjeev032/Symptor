@@ -156,7 +156,7 @@ const AdminDashboard = () => {
                 if (activeTab === 'diseases') {
                     setDiseaseForm({
                         name: data.name || '',
-                        severity: data.severity || 'Low', // Enhanced: use AI severity
+                        severity: data.severity || 'Low',
                         symptoms: data.symptoms ? data.symptoms.join(', ') : '',
                         affectedSystems: data.affectedSystems ? data.affectedSystems.join(', ') : '',
                         affectedOrgans: data.affectedOrganIds ? data.affectedOrganIds.join(', ') : '',
@@ -167,13 +167,13 @@ const AdminDashboard = () => {
                     setRecForm({
                         name: data.name || '',
                         type: data.type || 'Exercise',
-                        duration: '10 mins', // Default
+                        duration: '10 mins',
                         difficulty: data.difficulty || 'Beginner',
                         description: data.description || '',
-                        symptoms: data.symptoms ? data.symptoms.join(', ') : '', // Fetched via AI now
+                        symptoms: data.symptoms ? data.symptoms.join(', ') : '',
                         imageUrl: data.imageUrl || '',
                         imageSource: data.imageSource || '',
-                        imageLicense: data.imageLicense || ''
+                        imageLicense: data.imageLicense || '' // New field
                     });
                 }
             } else {
@@ -261,9 +261,20 @@ const AdminDashboard = () => {
                             <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-light)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <h3 style={{ margin: 0 }}>Preview: {previewData.name}</h3>
-                                    <span className="text-muted" style={{ fontSize: '0.8rem' }}>Source: {previewData.source || previewData.imageSource || 'External API'}</span>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <span className="badge badge-sm" style={{ display: 'block', marginBottom: '4px' }}>{previewData.source || previewData.imageSource || 'External API'}</span>
+                                        {previewData.imageLicense && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>License: {previewData.imageLicense}</span>}
+                                    </div>
                                 </div>
-                                <p className="text-muted" style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>{previewData.description ? previewData.description.substring(0, 150) + '...' : 'No description available'}</p>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                    {previewData.imageUrl && (
+                                        <div style={{ flex: '0 0 150px' }}>
+                                            <img src={previewData.imageUrl} alt={previewData.name} style={{ width: '100%', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }} />
+                                            {previewData.attribution && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '4px' }}>By: {previewData.attribution}</div>}
+                                        </div>
+                                    )}
+                                    <p className="text-muted" style={{ margin: 0, fontSize: '0.9rem', flex: 1 }}>{previewData.description ? previewData.description.substring(0, 300) + '...' : 'No description available'}</p>
+                                </div>
                             </div>
 
                             {/* Reuse the manual entry form but pre-filled */}
