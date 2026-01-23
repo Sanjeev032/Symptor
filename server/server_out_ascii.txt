@@ -1,0 +1,127 @@
+Server starting...
+node : node:internal/
+modules/cjs/loader:12
+47
+At line:1 char:1
++ node src/server.js 
+2>&1 | Out-File 
+-Encoding ASCII 
+server_out_ascii.t 
+...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (node:in   
+ ternal/modules/c    
+js/loader:1247:S    
+tring) [], Remot    
+eException
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+  throw err;
+  ^
+
+Error: Cannot find 
+module 'groq-sdk'
+Require stack:
+- C:\Users\sanje\Down
+loads\Symptor-master\
+Symptor-master\server
+\src\utils\aiClient.j
+s
+- C:\Users\sanje\Down
+loads\Symptor-master\
+Symptor-master\server
+\src\services\externa
+lDataService.js
+- C:\Users\sanje\Down
+loads\Symptor-master\
+Symptor-master\server
+\src\controllers\exte
+rnalDataController.js
+- C:\Users\sanje\Down
+loads\Symptor-master\
+Symptor-master\server
+\src\routes\adminRout
+es.js
+- C:\Users\sanje\Down
+loads\Symptor-master\
+Symptor-master\server
+\src\server.js
+    at Function._reso
+lveFilename (node:int
+ernal/modules/cjs/loa
+der:1244:15)
+    at 
+Function._load (node:
+internal/modules/cjs/
+loader:1070:27)
+    at TracingChannel
+.traceSync (node:diag
+nostics_channel:322:1
+4)
+    at 
+wrapModuleLoad (node:
+internal/modules/cjs/
+loader:217:24)
+    at 
+Module.require (node:
+internal/modules/cjs/
+loader:1335:12)
+    at require (node:
+internal/modules/help
+ers:136:16)
+    at 
+Object.<anonymous> (C
+:\Users\sanje\Downloa
+ds\Symptor-master\Sym
+ptor-master\server\sr
+c\utils\aiClient.js:1
+:14)
+    at 
+Module._compile (node
+:internal/modules/cjs
+/loader:1562:14)
+    at Object..js (no
+de:internal/modules/c
+js/loader:1699:10)
+    at Module.load (n
+ode:internal/modules/
+cjs/loader:1313:32) {
+  code: 
+'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\sanje
+\\Downloads\\Symptor-
+master\\Symptor-maste
+r\\server\\src\\utils
+\\aiClient.js',
+    'C:\\Users\\sanje
+\\Downloads\\Symptor-
+master\\Symptor-maste
+r\\server\\src\\servi
+ces\\externalDataServ
+ice.js',
+    'C:\\Users\\sanje
+\\Downloads\\Symptor-
+master\\Symptor-maste
+r\\server\\src\\contr
+ollers\\externalDataC
+ontroller.js',
+    'C:\\Users\\sanje
+\\Downloads\\Symptor-
+master\\Symptor-maste
+r\\server\\src\\route
+s\\adminRoutes.js',
+    'C:\\Users\\sanje
+\\Downloads\\Symptor-
+master\\Symptor-maste
+r\\server\\src\\serve
+r.js'
+  ]
+}
+
+Node.js v22.13.0

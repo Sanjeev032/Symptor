@@ -1,0 +1,4 @@
+/* Reset default styling that might conflict */
+#root {
+  width: 100%;
+}
