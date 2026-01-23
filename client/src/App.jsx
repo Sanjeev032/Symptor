@@ -4,6 +4,9 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import MainLayout from './components/Layout/MainLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 
@@ -27,6 +30,9 @@ const App = () => {
             <Route index element={<Navigate to="/login" replace />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password/:token" element={<ResetPassword />} />
+            <Route path="verify-email/:token" element={<VerifyEmail />} />
 
             <Route path="dashboard" element={
               <ProtectedRoute>

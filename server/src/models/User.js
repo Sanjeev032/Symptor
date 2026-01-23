@@ -18,7 +18,22 @@ const UserSchema = new mongoose.Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
-    }
+    },
+    // New Auth Fields
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    emailVerificationToken: String,
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    mobile: {
+        type: String,
+        unique: true,
+        sparse: true // Allows null/unique values
+    },
+    otp: String,
+    otpExpire: Date
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);
