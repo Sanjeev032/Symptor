@@ -1,10 +1,3 @@
-Here’s a **clean, professional, GitHub-ready README.md** tailored exactly for **your project** (advanced, MERN-only, 3D anatomy, symptom + pain highlighting).
-
-You can **copy–paste this directly** into `README.md`.
-
----
-
-```md
 # 🧠 Symptor – 3D Medical Symptom Visualizer
 
 Symptor is an **advanced MERN-based medical visualization web application** that allows users to explore the human body in **3D**, enter symptoms or pain areas, and visually understand which **body parts or organs are affected**.
